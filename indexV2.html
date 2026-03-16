@@ -108,9 +108,10 @@
         <option value="semana">Semana</option>
         <option value="mes">Mes</option>
       </select>
+      <label for="filtroAnio">Año:</label>
       <select id="filtroAnio">
-        <option value="">Todos los años</option>
-     </select>
+        <option value="">Todos</option>
+      </select>
     </div>
     <div class="flex">
       <button id="aplicarFiltros" class="primary">Aplicar Filtros</button>
@@ -251,7 +252,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="scriptV2.js"></script>
+   <script type="module">
+       import { inicializarUI } from "./js/ui.js";
+       inicializarUI();
+   </script>
 
 </body>
 </html>
