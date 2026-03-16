@@ -55,6 +55,7 @@
     const elFilterVista   = $id('vistaPor') || null;
     const elBtnApply      = $id('aplicarFiltros') || $id('aplicar-filtros') || null;
     const elBtnExport     = $id('exportarExcel') || $id('exportar') || null;
+    const filtroAnio = document.getElementById("filtroAnio").value;
 
     // table body for details
     const elTablaBody     = ($qs('#tablaVentas tbody')) ? $qs('#tablaVentas tbody') : ($qs('#sales-table tbody') || $id('tabla-ventas-body') || null);
@@ -1201,6 +1202,31 @@ function mostrarDetalleFiltros() {
   detalle.textContent = partes.length ? partes.join(" | ") : "Sin filtros aplicados";
 }
 
+// === MOSTRAR DETALLE DE FILTROS POR AÑO ===
+function llenarFiltroAnios(data) {
+    const sel = document.getElementById("filtroAnio");
+    const anios = new Set();
+
+    data.forEach(v => {
+        const f = parseFecha(v.fecha);
+        if (!isNaN(f)) anios.add(f.getFullYear());
+    });
+
+    [...anios].sort().forEach(a => {
+        const op = document.createElement("option");
+        op.value = a;
+        op.textContent = a;
+        sel.appendChild(op);
+    });
+}
+
+// FILTRO POR AÑO (NO DEPENDE DEL RANGO)
+if (filtroAnio) {
+    const anio = fecha.getFullYear();
+    if (anio != filtroAnio) return false;
+}
+
+
 // Llamar esta función cada vez que se aplican filtros
 safeAdd(elBtnApply, "click",  ()  =>  {
    currentPage  = 1;
@@ -1504,6 +1530,7 @@ function renderAlertas()  {
 
     renderKPIs();	
     renderAlertas();
+    llenarFiltroAnios(ventas);
 
     // --------- Init ----------
     try { renderStores(); } catch(e){ console.error('renderStores error', e); }
