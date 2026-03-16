@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor de Ventas Meet Fashion</title>
+  <link rel="stylesheet" href="styleV2.css" />
+</head>
+<body>
+  <header class="header">
+<!-- Header: logo + título -->
+<div class="header" style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img id="logo-img" src="" alt="Logo" style="height:56px;cursor:pointer">
+    <input id="logo-input" type="file" accept="image/*" style="display:none">
+  </div>
+  </div>
+
+    <h1>Gestor de Ventas Meet Fashion</h1>
+    <!-- <span class="status-text">Datos guardados localmente (localStorage)</span> -->
+  </header>
+
+  <main>
+
+<!-- Inicio: Sección Registro de Tienda (REEMPLAZAR la sección vieja) -->
+<section class="card">
+  <h2>Registro de Tienda</h2>
+
+  <!-- Input + botón (IDs que usa script.js) -->
+  <div class="flex store-add">
+    <input id="input-store-name" type="text" placeholder="Nombre de tienda (ej. Sucursal Centro)" />
+    <button id="btn-add-store" class="primary">Agregar tienda</button>
+  </div>
+
+  <!-- Contenedor donde script.js renderiza los botones/switches de tiendas -->
+  <div id="stores-list" class="switch-group" aria-label="Lista de tiendas"></div>
+</section>
+<!-- Fin: Sección Registro de Tienda -->
+
+<!-- Registro de ventas -->
+<section class="card">
+  <h2>Registro de Ventas</h2>
+<div id="registro-ventas">  
+  <!-- <div class="registro-flex">
+    <div>
+      <label>Fecha:</label>
+      <input type="date" id="fechaVenta" />
+    </div>
+    <div>
+      <label>Turno:</label>
+      <select id="turnoVenta">
+        <option value="matutino">Matutino</option>
+        <option value="vespertino">Vespertino</option>
+      </select>
+    </div>
+    <div>
+      <label>Efectivo:</label>
+      <input type="number" id="efectivoVenta" placeholder="$0.00" />
+    </div>
+    <div>
+      <label>Tarjeta:</label>
+      <input type="number" id="tarjetaVenta" placeholder="$0.00" />
+    </div>
+    <button id="registrarVenta" class="primary">Registrar Venta</button>
+  </div>
+</div> -->
+
+  <div class="registro-masivo">
+    <button id="agregarFila" class="secondary">➕ Agregar Fila</button>
+    <button id="generarRango" class="secondary">📅 Generar Rango</button>
+    <!-- <input type="file" id="importarExcel" accept=".xlsx,.xls" /> -->
+    <input type="file" id="importFile" accept=".xlsx,.csv">
+    <button id="btnImportar" disabled>Importar y guardar registros</button>
+  </div>
+</section>
+
+<!-- Filtros -->
+<section class="card">
+  <h2>Filtros y Reporte</h2>
+<p id="diasSeleccionadosTexto" class="dias-info"></p>
+  <div class="filter-bar">
+    <div class="flex">
+    <div id="filtro-fechas-container">
+         <button id="btnRangoFiltro" class="btn">📅 Generar Rango</button>
+    </div>
+    <div id="inputs-rango-filtro">
+	 <label for="fechaInicio">Desde:</label>
+         <input type="text" id="fechaInicio" />
+	 <label for="fechaFin">Hasta:</label>
+         <input type="text" id="fechaFin" />
+    </div>
+      <label for="tipoPago">Tipo:</label>
+      <select id="tipoPago">
+        <option value="ambos">Ambos</option>
+        <option value="efectivo">Efectivo</option>
+        <option value="tarjeta">Tarjeta</option>
+      </select>
+      <label for="turnoFiltro">Turno:</label>
+      <select id="turnoFiltro">
+        <option value="ambos">Ambos</option>
+        <option value="matutino">Matutino</option>
+        <option value="vespertino">Vespertino</option>
+      </select>
+      <label for="vistaPor">Vista por:</label>
+      <select id="vistaPor">
+        <option value="dia">Día</option>
+        <option value="semana">Semana</option>
+        <option value="mes">Mes</option>
+      </select>
+    </div>
+    <div class="flex">
+      <button id="aplicarFiltros" class="primary">Aplicar Filtros</button>
+<div class="filtros-acciones">
+  <button id="limpiarFiltros" class="success export">Limpiar filtros</button>
+</div>
+
+      <button id="exportarExcel" class="success export">Exportar</button>
+    </div>
+
+<div id="filtro-dias-semana" class="dias-semana">
+  <label>Días de la semana:</label>
+  <div class="checkbox-group">
+    <label><input type="checkbox" value="0"> D</label>
+    <label><input type="checkbox" value="1"> L</label>
+    <label><input type="checkbox" value="2"> M</label>
+    <label><input type="checkbox" value="3"> M</label>
+    <label><input type="checkbox" value="4"> J</label>
+    <label><input type="checkbox" value="5"> V</label>
+    <label><input type="checkbox" value="6"> S</label>
+  </div>
+
+</div>
+
+  </div>
+</section>
+
+<!-- Tabla -->
+<section class="card">
+  <h2>Detalle de Ventas</h2>
+  <div class="table-container">
+   <div id="detalle-ventas-wrapper" style="display:none">
+    <table id="tablaVentas">
+      <thead>
+        <tr>
+          <th data-col="fecha" class="sortable">Fecha</th>
+          <th data-col="fecha" class="sortable">Día</th>
+          <th data-col="fecha" class="sortable">Tienda</th>
+          <th data-col="fecha" class="sortable">Turno</th>
+          <th data-col="fecha" class="sortable">Efectivo</th>
+          <th data-col="fecha" class="sortable">Tarjeta</th>
+          <th data-col="fecha" class="sortable">Total</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-ventas-body"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button id="prevPage">Anterior</button>
+    <span id="pageInfo"></span>
+    <button id="nextPage">Siguiente</button>
+  </div>
+</section>
+
+<!--  ===  RESUMEN  FINANCIERO  (solo  vista  por  semana)  ===  -->
+<section  class="card" id="resumen-financiero-card"  style="display:none;">
+    <h2>Resumen  financiero  semanal</h2>
+
+    <div  class="flex"  style="margin-bottom:  10px;  gap:  10px;  flex-wrap:  wrap;">
+       <div>
+            <label>%  Resurtido:</label>
+            <input type="number"  id="fin_pct_resurtido"  value="48"  min="0"  max="100"  step="0.5">
+        </div>
+
+        <div>
+           <label>Nómina  fija  semanal:</label>
+            <input  type="number"  id="fin_nomina_fija"  value="6500"  min="0"  step="100">
+       </div>
+
+        <div>
+            <label>Renta  semanal:</label>
+           <input  type="number"  id="fin_renta"  value="7500"  min="0"  step="100">
+        </div>
+
+       <div>
+            <label>Bono  por  cada  $1,000  arriba  de  $35,000:</label>
+           <input  type="number"  id="fin_bono_mil"  value="200"  min="0"  step="50">
+        </div>
+
+       <button  id="fin_recalcular"  class="primary">Recalcular</button>
+    </div>
+
+    <div  class="table-container">
+        <table  id="tablaResumenFinanciero">
+           <thead>
+                <tr>
+                   <th>Semana</th>
+                    <th>Ventas  totales</th>
+                   <th>%  Resurtido</th>
+                   <th>Monto  resurtido</th>
+                    <th>Gastos  fijos</th>
+                   <th>Gastos  variables</th>
+                   <th>Utilidad</th>
+                </tr>
+            </thead>
+           <tbody  id="tbodyResumenFinanciero"></tbody>
+        </table>
+    </div>
+<div  class="pagination"  id="fin-pagination"  style="display:none;  margin-top:  10px;">
+    <button  id="fin-prev">Anterior</button>
+    <span  id="fin-page-info"></span>
+    <button  id="fin-next">Siguiente</button>
+</div>
+
+</section>
+
+
+<!-- Modulo KPI Dashboard -->
+<section  class="card"  id="kpi-dashboard">
+   <h2>KPI  del  Negocio</h2>
+   <div  class="flex" id="kpi-container"  style="gap:20px;  flex-wrap:wrap;">
+       <div class="kpi-box"><h3>Meta  semanal</h3><p  id="kpi-meta-semanal">$0</p></div>
+       <div class="kpi-box"><h3>Ventas  semana</h3><p  id="kpi-ventas-semana">$0</p></div>
+       <div class="kpi-box"><h3>Meta  mensual</h3><p  id="kpi-meta-mensual">$0</p></div>
+       <div class="kpi-box"><h3>Ventas  mes</h3><p  id="kpi-ventas-mes">$0</p></div>
+       <div class="kpi-box"><h3>Proyección  mensual</h3><p  id="kpi-proyeccion">$0</p></div>
+       <div class="kpi-box"><h3>Avance</h3><p  id="kpi-avance">0%</p></div>
+   </div>
+</section>
+
+
+<!-- Modulo alertas inteligentes -->
+<section  class="card" id="alertas-card">
+    <h2>Alertas</h2>
+
+   <ul  id="alertas-list"></ul>
+</section>
+
+
+<!-- Gráfica -->
+<section class="card">
+  <h2>Tendencia de Ventas</h2>
+  <canvas id="graficoVentas" height="100"></canvas>
+</section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="scriptV2.js"></script>
+
+</body>
+</html>
