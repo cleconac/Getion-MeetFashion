@@ -1408,30 +1408,6 @@ const  ventasSemana  =  getVentasSemanaActual()
     return  `${d.getUTCFullYear()}-W${String(weekNo).padStart(2,  '0')}`;
 }
 
-    const totalPages  =  Math.ceil(cfData.length  / cfRowsPerPage)  ||  1;
-   if  (cfPage  > totalPages)  cfPage  =  totalPages;
-
-    const start  =  (cfPage  - 1)  *  cfRowsPerPage;
-   const  end  = start  +  cfRowsPerPage;
-   const  rows  = cfData.slice(start,  end);
-
-   tbody.innerHTML  =  "";
-   rows.forEach(r  => {
-       const  tr  = document.createElement("tr");
-       tr.innerHTML  =  `
-          <td>${r.semana}</td>
-          <td>${fmtMX(r.entradas)}</td>
-          <td>${fmtMX(r.salidas)}</td>
-           <td>${fmtMX(r.flujo)}</td>
-      `;
-       tbody.appendChild(tr);
-   });
-
-   pag.style.display  =  "flex";
-   info.textContent  =  `Página ${cfPage}  de  ${totalPages}`;
-}
-
-
  function  groupBySemana(data)  {
     const  grupos =  {};
  
@@ -1480,106 +1456,6 @@ function  groupByMes(data)  {
    return  Object.values(grupos).sort((a,b)  =>  a.mes.localeCompare(b.mes));
 }
 
-
-
-//Funcion para renderizar modulo comparativa año con año
-function  renderYoY()  {
-   const  tbody  = $id("tbodyYoY");
-    const pag  =  $id("yoy-pagination");
-   const  info  = $id("yoy-page-info");
-
-   const  añoActual  =  new Date().getFullYear();
-    const añoAnterior  =  añoActual  - 1;
-
-   const  datosActual  =  sales.filter(v =>  {
-       const  f =  parseFecha(v.fecha);
-       return  f.getFullYear() ===  añoActual;
-   });
-
-   const  datosAnterior  =  sales.filter(v =>  {
-       const  f =  parseFecha(v.fecha);
-       return  f.getFullYear() ===  añoAnterior;
-   });
-
-   const  groupedActual  =  groupByMes(datosActual);
-   const  groupedAnterior =  groupByMes(datosAnterior);
-
-   yoyData  =  groupedActual.map(g =>  {
-       const  mes =  g.mes;
-       const  ventasActual =  g.total;
-
-       const match  =  groupedAnterior.find(a  => a.mes.endsWith("/"  +  añoAnterior)  && a.mes.startsWith(mes.slice(0,2)));
-       const  ventasAnterior  = match  ?  match.total  : 0;
-
-       const  variacion =  ventasAnterior  ===  0
-          ?  "N/A"
-          :  (((ventasActual -  ventasAnterior)  /  ventasAnterior) *  100).toFixed(1)  +  "%";
-
-       return  {  semana: mes,  ventasActual,  ventasAnterior,  variacion };
-    });
-
-    const totalPages  =  Math.ceil(yoyData.length  / yoyRowsPerPage)  ||  1;
-   if  (yoyPage  > totalPages)  yoyPage  =  totalPages;
-
-    const start  =  (yoyPage  - 1)  *  yoyRowsPerPage;
-   const  end  = start  +  yoyRowsPerPage;
-   const  rows  = yoyData.slice(start,  end);
-
-   tbody.innerHTML  =  "";
-   rows.forEach(r  => {
-       const  tr  = document.createElement("tr");
-       tr.innerHTML  =  `
-          <td>${r.semana}</td>
-          <td>${fmtMX(r.ventasActual)}</td>
-          <td>${fmtMX(r.ventasAnterior)}</td>
-           <td>${r.variacion}</td>
-      `;
-       tbody.appendChild(tr);
-   });
-
-   pag.style.display  =  "flex";
-   info.textContent  =  `Página ${yoyPage}  de  ${totalPages}`;
-}
-
-
-function  getRankingData(raw)  {
-    const ranking  =  {
-        Tienda:  {},
-        Turno:  {},
-        Día: {}
-    };
-
-    raw.forEach(v  =>  {
-        const  tienda  =  v.tienda  ||  "Sin nombre";
-        const  turno  =  normalizarTurno(v.turno);
-        const  dia  =  getDiaSemana(v.fecha);
-
-       const  total  =  Number(v.total  ||  v.efectivo  +  v.tarjeta  ||  0);
-
-        //  Tienda
-       if  (!ranking.Tienda[tienda])  ranking.Tienda[tienda]  =  0;
-        ranking.Tienda[tienda]  +=  total;
-
-       //  Turno
-        if  (!ranking.Turno[turno])  ranking.Turno[turno]  =  0;
-        ranking.Turno[turno]  +=  total;
-
-       //  Día
-        if  (!ranking.Día[dia])  ranking.Día[dia]  =  0;
-        ranking.Día[dia]  += total;
-    });
-
-    const  salida  =  [];
-
-    Object.entries(ranking).forEach(([tipo,  grupo])  =>  {
-       Object.entries(grupo).forEach(([nombre,  total])  =>  {
-            salida.push({  tipo,  nombre,  total  });
-       });
-    });
-
-    return  salida.sort((a,b)  =>  b.total  -  a.total);
-}
-
 function  normalizarTurno(turno)  {
    if  (!turno)  return  "Sin  turno";
     const  t  =  turno.toLowerCase();
@@ -1595,130 +1471,10 @@ function  getDiaSemana(fechaStr)  {
 }
 
 
-
-//Funcion para modulo de ranking de ventas por tienda
-function  renderRanking()  {
-    const  tbody  =  $id("tbodyRanking");
-   const  pag  =  $id("ranking-pagination");
-    const  info  =  $id("ranking-page-info");
-
-    const  raw  =  getFilteredRaw();
-   const  rankingData  =  getRankingData(raw);
-
-    const  totalPages  =  Math.ceil(rankingData.length  /  rankingRowsPerPage)  ||  1;
-    if  (rankingPage  > totalPages)  rankingPage  =  totalPages;
-
-    const  start  =  (rankingPage  -  1)  *  rankingRowsPerPage;
-    const  end  = start  +  rankingRowsPerPage;
-    const  rows  =  rankingData.slice(start,  end);
-
-    tbody.innerHTML  =  "";
-    rows.forEach(r  => {
-        const  tr  =  document.createElement("tr");
-        tr.innerHTML  =  `
-           <td>${r.tipo}</td>
-            <td>${r.nombre}</td>
-            <td>${fmtMX(r.total)}</td>
-       `;
-        tbody.appendChild(tr);
-    });
-
-    pag.style.display  =  "flex";
-    info.textContent  = `Página  ${rankingPage}  de  ${totalPages}`;
-}
-
-function  getRankingPorTipo(raw)  {
-   const  ranking  = {
-       Tienda:  {},
-       Turno: {},
-       Día:  {}
-   };
-
-   raw.forEach(v  =>  {
-      const  tienda  =  v.tienda ||  "Sin  nombre";
-       const turno  =  normalizarTurno(v.turno);
-       const dia  =  getDiaSemana(v.fecha);
-       const total  =  Number(v.total  || v.efectivo  +  v.tarjeta  || 0);
-
-       ranking.Tienda[tienda]  = (ranking.Tienda[tienda]  ||  0)  + total;
-       ranking.Turno[turno]  =  (ranking.Turno[turno] ||  0)  +  total;
-      ranking.Día[dia]  =  (ranking.Día[dia]  || 0)  +  total;
-   });
-
-   const  tiendas  = ordenar(ranking.Tienda);
-    const turnos  =  ordenar(ranking.Turno);
-   const  dias  = ordenar(ranking.Día);
-
-   const  maxLength  =  Math.max(tiendas.length, turnos.length,  dias.length);
-   const  tabla  =  [];
-
-    for (let  i  =  0; i  <  maxLength;  i++) {
-       tabla.push({
-          tienda:  tiendas[i]?.nombre  ||  "",
-          turno:  turnos[i]?.nombre ||  "",
-          dia:  dias[i]?.nombre  ||  "",
-          totalTienda:  tiendas[i]?.total ||  0,
-          totalTurno:  turnos[i]?.total  ||  0,
-          totalDia:  dias[i]?.total ||  0
-       });
-   }
-
-   return  tabla;
-}
-
 function  ordenar(obj)  {
    return  Object.entries(obj)
       .map(([nombre,  total])  =>  ({ nombre,  total  }))
        .sort((a,b) =>  b.total  -  a.total);
-}
-
-
- function  renderRankingUnificado()  {
-    const  tbody =  $id("tbodyRankingUnificado");
-    const  pag  =  $id("ranking-pagination");
-    const  info =  $id("ranking-page-info");
- 
-    const  raw  = sales;  //  o  usa sales  directamente  si  quieres probar
-     window.rankingData =  getRankingPorTipo(raw);  //  ahora accesible  desde  consola
- 
-    const  totalPages =  Math.ceil(rankingData.length  /  rankingRowsPerPage) ||  1;
-    if  (rankingPage  >  totalPages) rankingPage  =  totalPages;
- 
-    const  start =  (rankingPage  -  1) *  rankingRowsPerPage;
-    const  end  =  start +  rankingRowsPerPage;
-    const  rows  =  rankingData.slice(start, end);
- 
-    tbody.innerHTML  =  "";
-    rows.forEach(r  =>  {
-       const  tr  =  document.createElement("tr");
-       tr.innerHTML  =  `
-           <td>${r.tienda}</td>
-           <td>${fmtMX(r.totalTienda)}</td>
-            <td>${r.turno}</td>
-           <td>${fmtMX(r.totalTurno)}</td>
-           <td>${r.dia}</td>
-           <td>${fmtMX(r.totalDia)}</td>
-        `;
-        tbody.appendChild(tr);
-    });
- 
-    pag.style.display  =  "flex";
-    info.textContent  = `Página  ${rankingPage}  de  ${totalPages}`;
-}
-
-function  rankingPrevPage()  {
-    if  (rankingPage  >  1)  {
-        rankingPage--;
-        renderRankingUnificado();
-    }
-}
-
-function  rankingNextPage()  {
-    const  totalPages  =  Math.ceil(rankingData.length  /  rankingRowsPerPage);
-    if  (rankingPage  <  totalPages)  {
-        rankingPage++;
-        renderRankingUnificado();
-    }
 }
 
 
@@ -1746,29 +1502,7 @@ function renderAlertas()  {
        : "<li>Sin  alertas</li>";
 }
 
-
-safeAdd($id("yoy-prev"),  "click", ()  =>  {
-   if  (yoyPage  > 1)  {
-       yoyPage--;
-       renderYoY();
-   }
-});
-
-safeAdd($id("yoy-next"),  "click",  () =>  {
-   const  totalPages  =  Math.ceil(yoyData.length /  yoyRowsPerPage);
-   if  (yoyPage  <  totalPages) {
-       yoyPage++;
-       renderYoY();
-   }
-});
-
-
-
-
-    renderKPIs();
-    renderYoY();
-    renderRanking();
-    renderRankingUnificado();
+    renderKPIs();	
     renderAlertas();
 
     // --------- Init ----------
