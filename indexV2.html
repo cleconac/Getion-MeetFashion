@@ -85,29 +85,32 @@
          <button id="btnRangoFiltro" class="btn">📅 Generar Rango</button>
     </div>
     <div id="inputs-rango-filtro">
-	 <label for="fechaInicio">Desde:</label>
+	 <label for="fechaInicio">📅 Desde:</label>
          <input type="text" id="fechaInicio" />
-	 <label for="fechaFin">Hasta:</label>
+	 <label for="fechaFin">📅 Hasta:</label>
          <input type="text" id="fechaFin" />
     </div>
-      <label for="tipoPago">Tipo:</label>
+      <label for="tipoPago">💳 Tipo:</label>
       <select id="tipoPago">
         <option value="ambos">Ambos</option>
         <option value="efectivo">Efectivo</option>
         <option value="tarjeta">Tarjeta</option>
       </select>
-      <label for="turnoFiltro">Turno:</label>
+      <label for="turnoFiltro">⏰Turno:</label>
       <select id="turnoFiltro">
         <option value="ambos">Ambos</option>
         <option value="matutino">Matutino</option>
         <option value="vespertino">Vespertino</option>
       </select>
-      <label for="vistaPor">Vista por:</label>
+      <label for="vistaPor">📈 Vista por:</label>
       <select id="vistaPor">
         <option value="dia">Día</option>
         <option value="semana">Semana</option>
         <option value="mes">Mes</option>
       </select>
+      <select id="filtroAnio">
+        <option value="">Todos los años</option>
+     </select>
     </div>
     <div class="flex">
       <button id="aplicarFiltros" class="primary">Aplicar Filtros</button>
