@@ -895,6 +895,19 @@ confirmBtn.addEventListener("click", () => {
       return out;
     }
 
+function getMesCompleto(desde, hasta) {
+    const fechas = [new Date(desde), new Date(hasta)].sort((a,b)=>a-b);
+    const base = fechas[0];
+    const anio = base.getFullYear();
+    const mes = base.getMonth();
+
+    return sales.filter(v => {
+        const f = parseFecha(v.fecha);
+        return f.getFullYear() === anio && f.getMonth() === mes;
+    });
+}
+
+
     // --------- Filters / Grouping / Render ----------
 function getFilteredRaw() {
   let rows = sales.slice();
@@ -938,7 +951,7 @@ function getFilteredRaw() {
 }
 
 
-    function groupByView(raw) {
+function groupByView(raw) {
       const vista = elFilterVista ? elFilterVista.value : 'dia';
       if (vista === 'dia') {
         const turnoFilter = elFilterTurno ? elFilterTurno.value : 'ambos';
@@ -957,36 +970,75 @@ function getFilteredRaw() {
       }
 
       const map = {};
-      raw.forEach(r => {
-        let key,label,keySort;
-        if (vista === 'semana') {
-          const d = new Date(r.fecha + 'T00:00:00');
-          const day = d.getDay();
-          const start = new Date(d); start.setDate(d.getDate() - day);
-          const end = new Date(start); end.setDate(start.getDate() + 6);
-          key = `${start.toISOString().slice(0,10)}_${end.toISOString().slice(0,10)}`;
-          label = `${start.toISOString().slice(0,10)} - ${end.toISOString().slice(0,10)}`;
-          keySort = start.toISOString().slice(0,10);
-        } else {
-          const d = new Date(r.fecha + 'T00:00:00');
-          key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-          label = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-          keySort = key;
-        }
-        const mapKey = `${key}|${r.tienda}`;
-        if (!map[mapKey]) map[mapKey] = { periodLabel: label, periodKey: keySort, tienda: r.tienda, efectivo:0, tarjeta:0, total:0, turno:'Ambos' };
-        map[mapKey].efectivo += Number(r.efectivo || 0);
-        map[mapKey].tarjeta += Number(r.tarjeta || 0);
-        map[mapKey].total += Number(r.total || (Number(r.efectivo||0)+Number(r.tarjeta||0)));
-      });
+raw.forEach(r => {
+    let key, label, keySort;
+    const d = new Date(r.fecha + "T00:00:00");
+
+    if (vista === "semana") {
+        const day = d.getDay();
+        const start = new Date(d); start.setDate(d.getDate() - day);
+        const end = new Date(start); end.setDate(start.getDate() + 6);
+        key = `${start.toISOString().slice(0,10)}_${end.toISOString().slice(0,10)}`;
+        label = `${start.toISOString().slice(0,10)} - ${end.toISOString().slice(0,10)}`;
+        keySort = start.toISOString().slice(0,10);
+
+    } else if (vista === "mes") {
+        const mes = String(d.getMonth()+1).padStart(2,'0');
+        const anio = d.getFullYear();
+        key = `${anio}-${mes}`;
+        label = `${mes}/${anio}`;
+        keySort = key;
+
+    } else if (vista === "anio") {
+        const anio = d.getFullYear();
+        key = `${anio}`;
+        label = `${anio}`;
+        keySort = key;
+    }
+
+    const mapKey = `${key}|${r.tienda}`;
+
+    if (!map[mapKey]) {
+        map[mapKey] = {
+            periodLabel: label,
+            periodKey: keySort,
+            tienda: r.tienda,
+            efectivo: 0,
+            tarjeta: 0,
+            total: 0,
+            turno: "Ambos"
+        };
+    }
+
+    map[mapKey].efectivo += Number(r.efectivo || 0);
+    map[mapKey].tarjeta += Number(r.tarjeta || 0);
+    map[mapKey].total += Number(r.total || (Number(r.efectivo||0)+Number(r.tarjeta||0)));
+});
+
       let out = Object.values(map).map(m => ({ ...m, efectivo:+m.efectivo.toFixed(2), tarjeta:+m.tarjeta.toFixed(2), total:+m.total.toFixed(2) }));
       return out.sort((a,b) => (a.periodKey||'').localeCompare(b.periodKey||''));
-    }
+}
 
 // --- Variables globales para ordenamiento ---
 let currentSort = { column: null, direction: null };
 
 function renderVentas() {
+  // === 1. Obtener vista seleccionada ===
+  const vista = elFilterVista ? elFilterVista.value : "dia";
+// Cambiar encabezado según vista
+const thDia = document.querySelector("#tablaVentas thead th:nth-child(2)");
+if (thDia) {
+    if (vista === "mes") {
+        thDia.textContent = "Mes";
+    }else if (vista === "anio") {
+        thDia.textContent = "Año";
+    }else if (vista === "semana") {
+        thDia.textContent = "Semana";
+    }else {
+        thDia.textContent = "Día";
+    }
+}
+
   if (!elTablaBody) { warn('tablaVentas tbody no encontrada'); return; }
 
   const desdeVal = document.getElementById("fechaInicio") ? (document.getElementById("fechaInicio").value || '') : '';
@@ -999,11 +1051,26 @@ function renderVentas() {
     return;
   }
 
-  // Obtenemos los datos filtrados completos
+  // === 2. Obtener datos filtrados (pero NO para vista mensual) ===
   let raw = getFilteredRaw();
+
+  // === 3. Si la vista es MES, obtener el mes completo ANTES de agrupar ===
+  if (vista === "mes") {
+
+    // Construir un arreglo con SOLO las fechas del rango original
+    const rangoOriginal = sales.filter(v => {
+      const f = normalizeFecha(v.fecha);
+      return (!desdeVal || f >= desdeVal) && (!hastaVal || f <= hastaVal);
+    });
+
+    // Obtener el mes completo basado en el rango original
+    raw = getMesesCompletosDesdeRango(desdeVal, hastaVal, sales);
+  }
+
+  // === 4. Agrupar datos según vista ===
   let grouped = groupByView(raw);
 
-  // === Aplicar ordenamiento global si existe ===
+  // === 5. Aplicar ordenamiento global si existe ===
   if (currentSort.column && currentSort.direction) {
     const dir = currentSort.direction === "asc" ? 1 : -1;
     grouped.sort((a, b) => {
@@ -1014,7 +1081,7 @@ function renderVentas() {
     });
   }
 
-  // --- Paginación (después del ordenamiento) ---
+  // === 6. Paginación ===
   const totalPages = Math.max(1, Math.ceil(grouped.length / rowsPerPage));
   if (currentPage > totalPages) currentPage = totalPages;
   const start = (currentPage - 1) * rowsPerPage;
@@ -1027,14 +1094,20 @@ function renderVentas() {
   } else {
     const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     pageRows.forEach(r => {
-      const tr = document.createElement('tr');
-      const fecha = r.periodLabel || r.fecha;
-      let diaSemana = '';
-      try {
-        const d = new Date(r.fecha + "T00:00:00");
-        diaSemana = isNaN(d) ? "" : dias[d.getDay()];
-      } catch { diaSemana = ""; }
+    const tr = document.createElement('tr');
+    const fecha = r.periodLabel || r.fecha;
 
+      let diaSemana = '';
+      if (vista === "semana") {
+          diaSemana = nombreSemanaDesdePeriodLabel(r.periodLabel);
+      }else if (vista === "mes" || vista === "anio") {
+          diaSemana = nombreMesAnioDesdePeriodLabel(r.periodLabel, vista);
+      } else {
+      try {
+          const d = new Date(r.fecha + "T00:00:00");
+          diaSemana = isNaN(d) ? "" : dias[d.getDay()];
+        } catch { diaSemana = ""; }
+      }
       tr.innerHTML = `
         <td>${fecha}</td>
         <td>${diaSemana}</td>
@@ -1054,6 +1127,49 @@ function renderVentas() {
   if (detalleWrapper) detalleWrapper.style.display = '';
   renderChart(grouped);
 }
+
+function nombreMesAnioDesdePeriodLabel(periodLabel, vista) {
+    if (vista === "mes") {
+        // periodLabel viene como "03/2026"
+        const [mes, anio] = periodLabel.split("/");
+        const nombres = [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
+        const idx = parseInt(mes, 10) - 1;
+        return `${nombres[idx]} ${anio}`;
+    }
+
+    if (vista === "anio") {
+        // periodLabel viene como "2026"
+        return periodLabel;
+    }
+
+    // fallback
+    return periodLabel;
+
+}
+
+function nombreSemanaDesdePeriodLabel(periodLabel) {
+    // periodLabel viene como "2025-03-30 - 2025-04-05"
+    const [ini] = periodLabel.split(" - ");
+    const d = new Date(ini + "T00:00:00");
+
+    const diaMes = d.getDate();
+    const mes = d.getMonth(); // 0-11
+    const anio = d.getFullYear();
+
+    // Número de semana dentro del mes
+    const semana = Math.ceil(diaMes / 7);
+
+    const nombresMes = [
+        "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+    ];
+
+    return `${semana}/${nombresMes[mes]}/${anio}`;
+}
+
 
 
 // === ORDENAMIENTO GLOBAL POR COLUMNAS NUMÉRICAS ===
@@ -1363,35 +1479,90 @@ function  getEndOfWeek(date)  {
 
 //Funcion para renderizar modulo KPI Dashboard
 function renderKPIs()  {
-   const  raw  =  sales;
-   const  grouped =  groupByView(raw);
 
-   const  hoy  = new  Date();
-   const  mesActual  =  hoy.getMonth() +  1;
-   const  añoActual  =  hoy.getFullYear();
+    const hoy = new Date();
+    const añoActual = hoy.getFullYear();
+    const mesActual = hoy.getMonth();
+    const diaActual = hoy.getDate();
 
-    const ventasMes  =  raw
-       .filter(v =>  new  Date(v.fecha).getMonth()  + 1  ===  mesActual)
-       .reduce((acc, v)  =>  acc  + Number(v.total  ||  v.efectivo  + v.tarjeta),  0);
+    const inicioMes = new Date(añoActual, mesActual, 1);
+    const finMes = new Date(añoActual, mesActual + 1, 0);
+    const diasMes = finMes.getDate();
 
-   const semanaActual  =  getISOWeek(new  Date());
-const  ventasSemana  =  getVentasSemanaActual()
-   .reduce((acc,  v)  =>  acc  +  Number(v.total  || v.efectivo  +  v.tarjeta),  0);
+    // Inicio de semana (lunes)
+    const inicioSemana = new Date(hoy);
+    const day = hoy.getDay();
+    const diff = hoy.getDate() - day + (day === 0 ? -6 : 1);
+    inicioSemana.setDate(diff);
 
-   const  metaSemanal  =  35000;
-   const  metaMensual =  120000;
+    // Metas
+    const metaSemanal = 35000;
+    const metaMensual = metaSemanal * 4;
 
-   const  diasMes  = new  Date(añoActual,  mesActual,  0).getDate();
-   const  diaActual =  hoy.getDate();
-   const  proyeccion  =  (ventasMes /  diaActual)  *  diasMes;
+    // Venta semanal
+    const ventasSemana = sales
+        .filter(v => {
+            const f = new Date(v.fecha + "T00:00:00");
+            return f >= inicioSemana && f <= hoy;
+        })
+        .reduce((acc, v) => acc + Number(v.total || v.efectivo + v.tarjeta), 0);
 
-    $id("kpi-meta-semanal").textContent =  fmtMX(metaSemanal);
-   $id("kpi-ventas-semana").textContent  =  fmtMX(ventasSemana);
-   $id("kpi-meta-mensual").textContent  =  fmtMX(metaMensual);
-   $id("kpi-ventas-mes").textContent  = fmtMX(ventasMes);
-    $id("kpi-proyeccion").textContent =  fmtMX(proyeccion);
-   $id("kpi-avance").textContent  =  ((ventasMes  / metaMensual)  *  100).toFixed(1)  + "%";
+    // Venta mensual
+    const ventasMes = sales
+        .filter(v => {
+            const f = new Date(v.fecha + "T00:00:00");
+            return f >= inicioMes && f <= hoy;
+        })
+        .reduce((acc, v) => acc + Number(v.total || v.efectivo + v.tarjeta), 0);
+
+    // Proyección mensual
+    const proyeccionMes = (ventasMes / diaActual) * diasMes;
+
+    // Proyección semanal
+    const diasTranscurridosSemana = Math.max(1, Math.ceil((hoy - inicioSemana) / (1000*60*60*24)));
+    const proyeccionSemanal = (ventasSemana / diasTranscurridosSemana) * 7;
+
+    // Avances
+    const avanceSemanal = (ventasSemana / metaSemanal) * 100;
+    const avanceMensual = (ventasMes / metaMensual) * 100;
+
+    // Semáforos
+    const colorSemanal = getSemaforoColor(avanceSemanal);
+    const colorMensual = getSemaforoColor(avanceMensual);
+
+    // Render valores
+    $id("kpi-meta-semanal").textContent = fmtMX(metaSemanal);
+    $id("kpi-ventas-semana").textContent = fmtMX(ventasSemana);
+    $id("kpi-proyeccion-semanal").textContent = fmtMX(proyeccionSemanal);
+
+    $id("kpi-meta-mensual").textContent = fmtMX(metaMensual);
+    $id("kpi-ventas-mes").textContent = fmtMX(ventasMes);
+    $id("kpi-proyeccion").textContent = fmtMX(proyeccionMes);
+    $id("kpi-avance").textContent = avanceMensual.toFixed(1) + "%";
+
+    // Semáforos
+    $id("kpi-semaforo-semanal").className = "semaforo " + colorSemanal;
+    $id("kpi-semaforo-mensual").className = "semaforo " + colorMensual;
+
+    // Barras de progreso
+    const barSem = $id("progress-semanal");
+    const barMes = $id("progress-mensual");
+
+    barSem.style.width = Math.min(avanceSemanal, 100) + "%";
+    barMes.style.width = Math.min(avanceMensual, 100) + "%";
+
+    barSem.className = "progress-bar " + colorSemanal;
+    barMes.className = "progress-bar " + colorMensual;
 }
+
+
+
+function getSemaforoColor(porcentaje) {
+    if (porcentaje >= 100) return "verde";
+    if (porcentaje >= 80) return "amarillo";
+    return "rojo";
+}
+
 
  function  parseFecha(fechaStr)  {
     const  [y, m,  d]  =  fechaStr.split("-");
@@ -1455,6 +1626,41 @@ function  groupByMes(data)  {
 
    return  Object.values(grupos).sort((a,b)  =>  a.mes.localeCompare(b.mes));
 }
+
+
+function getMesesCompletosDesdeRango(desde, hasta, dataTotal) {
+    const fDesde = parseFecha(desde);
+    const fHasta = parseFecha(hasta);
+
+    if (isNaN(fDesde) || isNaN(fHasta)) return [];
+
+    const meses = [];
+    let cursor = new Date(fDesde.getFullYear(), fDesde.getMonth(), 1);
+
+    // Recorrer todos los meses entre desde y hasta
+    while (cursor <= fHasta) {
+        meses.push({
+            anio: cursor.getFullYear(),
+            mes: cursor.getMonth()
+        });
+        cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    // Obtener ventas completas de cada mes
+    const resultado = [];
+
+    meses.forEach(({ anio, mes }) => {
+        const ventasMes = dataTotal.filter(v => {
+            const f = parseFecha(v.fecha);
+            return f.getFullYear() === anio && f.getMonth() === mes;
+        });
+        resultado.push(...ventasMes);
+    });
+
+    return resultado;
+}
+
+
 
 function  normalizarTurno(turno)  {
    if  (!turno)  return  "Sin  turno";
