@@ -86,9 +86,9 @@
     </div>
     <div id="inputs-rango-filtro">
 	 <label for="fechaInicio">📅 Desde:</label>
-         <input type="text" id="fechaInicio" />
+         <input type="text" id="fechaInicio" readonly />
 	 <label for="fechaFin">📅 Hasta:</label>
-         <input type="text" id="fechaFin" />
+         <input type="text" id="fechaFin" readonly />
     </div>
       <label for="tipoPago">💳 Tipo:</label>
       <select id="tipoPago">
@@ -107,10 +107,7 @@
         <option value="dia">Día</option>
         <option value="semana">Semana</option>
         <option value="mes">Mes</option>
-      </select>
-      <label for="filtroAnio">Año:</label>
-      <select id="filtroAnio">
-        <option value="">Todos</option>
+        <option value="">Año</option>
       </select>
     </div>
     <div class="flex">
@@ -252,10 +249,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-   <script type="module">
-       import { inicializarUI } from "./js/ui.js";
-       inicializarUI();
-   </script>
+  <script src="scriptV2.js"></script>
 
 </body>
 </html>
