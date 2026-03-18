@@ -12,7 +12,7 @@
 <!-- Header: logo + título -->
 <div class="header" style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px">
   <div style="display:flex;align-items:center;gap:12px">
-    <img id="logo-img" src="" alt="Logo" style="height:56px;cursor:pointer">
+    <img id="logo-img" src="" alt="Logo">
     <input id="logo-input" type="file" accept="image/*" style="display:none">
   </div>
   </div>
@@ -107,7 +107,7 @@
         <option value="dia">Día</option>
         <option value="semana">Semana</option>
         <option value="mes">Mes</option>
-        <option value="">Año</option>
+        <option value="anio">Año</option>
       </select>
     </div>
     <div class="flex">
@@ -219,17 +219,71 @@
 
 
 <!-- Modulo KPI Dashboard -->
-<section  class="card"  id="kpi-dashboard">
-   <h2>KPI  del  Negocio</h2>
-   <div  class="flex" id="kpi-container"  style="gap:20px;  flex-wrap:wrap;">
-       <div class="kpi-box"><h3>Meta  semanal</h3><p  id="kpi-meta-semanal">$0</p></div>
-       <div class="kpi-box"><h3>Ventas  semana</h3><p  id="kpi-ventas-semana">$0</p></div>
-       <div class="kpi-box"><h3>Meta  mensual</h3><p  id="kpi-meta-mensual">$0</p></div>
-       <div class="kpi-box"><h3>Ventas  mes</h3><p  id="kpi-ventas-mes">$0</p></div>
-       <div class="kpi-box"><h3>Proyección  mensual</h3><p  id="kpi-proyeccion">$0</p></div>
-       <div class="kpi-box"><h3>Avance</h3><p  id="kpi-avance">0%</p></div>
-   </div>
+<section class="card" id="kpi-dashboard">
+    <h2>KPI del Negocio</h2>
+
+    <div class="flex" id="kpi-container" style="gap:20px; flex-wrap:wrap;">
+
+        <div class="kpi-box">
+            <h3>Meta semanal</h3>
+            <div class="kpi-row">
+                <span id="kpi-meta-semanal">$0</span>
+                <span id="kpi-semaforo-semanal" class="semaforo"></span>
+            </div>
+	    <div class="progress">
+        	<div id="progress-semanal" class="progress-bar"></div>
+	    </div>
+        </div>
+
+        <div class="kpi-box">
+            <h3>Ventas semana</h3>
+            <div class="kpi-row">
+                <span id="kpi-ventas-semana">$0</span>
+            </div>
+        </div>
+
+	<div class="kpi-box">
+	    <h3>Proyección semanal</h3>
+	    <div class="kpi-row">
+	        <span id="kpi-proyeccion-semanal">$0</span>
+	    </div>
+	</div>
+
+        <div class="kpi-box">
+            <h3>Meta mensual</h3>
+            <div class="kpi-row">
+                <span id="kpi-meta-mensual">$0</span>
+                <span id="kpi-semaforo-mensual" class="semaforo"></span>
+            </div>
+	    <div class="progress">
+	        <div id="progress-mensual" class="progress-bar"></div>
+	    </div>
+        </div>
+
+        <div class="kpi-box">
+            <h3>Ventas mes</h3>
+            <div class="kpi-row">
+                <span id="kpi-ventas-mes">$0</span>
+            </div>
+        </div>
+
+        <div class="kpi-box">
+            <h3>Proyección mensual</h3>
+            <div class="kpi-row">
+                <span id="kpi-proyeccion">$0</span>
+            </div>
+        </div>
+
+        <div class="kpi-box">
+            <h3>Avance</h3>
+            <div class="kpi-row">
+                <span id="kpi-avance">0%</span>
+            </div>
+        </div>
+
+    </div>
 </section>
+
 
 
 <!-- Modulo alertas inteligentes -->
