@@ -1489,11 +1489,14 @@ function renderKPIs()  {
     const finMes = new Date(añoActual, mesActual + 1, 0);
     const diasMes = finMes.getDate();
 
-    // Inicio de semana (lunes)
+    // ============================
+    //  INICIO DE SEMANA (DOMINGO)
+    // ============================
     const inicioSemana = new Date(hoy);
-    const day = hoy.getDay();
-    const diff = hoy.getDate() - day + (day === 0 ? -6 : 1);
+    const day = hoy.getDay(); // 0 = domingo
+    const diff = hoy.getDate() - day; // domingo como inicio
     inicioSemana.setDate(diff);
+    inicioSemana.setHours(0,0,0,0);
 
     // Metas
     const metaSemanal = 35000;
@@ -1684,32 +1687,116 @@ function  ordenar(obj)  {
 }
 
 
+function inicioSemana(fecha) {
+    const d = new Date(fecha);
+    const day = d.getDay(); // 0 domingo
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // lunes
+    d.setDate(diff);
+    d.setHours(0,0,0,0);
+    return d;
+}
+
+
 //Funcion para modulo de alertas inteligentes
-function renderAlertas()  {
-   const  raw  =  sales;
-   const  grouped =  groupByView(raw);
+function generarAlertas() {
+    const lista = $id("alertas-list");
+    lista.innerHTML = "";
 
-   const  alertas  = [];
-    const ventasSemana  =  grouped.reduce((acc,g)=>acc+g.total,0);
+    if (!sales.length) return;
 
-   if  (ventasSemana <  30000)
-       alertas.push("⚠️  Las ventas  de  esta  semana están  por  debajo  del promedio.");
+    const hoy = new Date();
+    const año = hoy.getFullYear();
+    const mes = hoy.getMonth();
+    const dia = hoy.getDate();
 
-   const  hoy  =  new Date();
-    if (hoy.getDate()  >  25)  {
-      const  ventasMes  =  raw.reduce((acc,v)=>acc+(v.total||v.efectivo+v.tarjeta),0);
-      if  (ventasMes  <  100000)
-          alertas.push("⚠️  Estás por  debajo  de  la meta  mensual.");
-   }
+    const inicioMes = new Date(año, mes, 1);
+    const finMes = new Date(año, mes + 1, 0);
+    const diasMes = finMes.getDate();
 
-   const  ul  =  $id("alertas-list");
-   ul.innerHTML  = alertas.length
-       ?  alertas.map(a=>`<li>${a}</li>`).join("")
-       : "<li>Sin  alertas</li>";
+    // ============================
+    //  INICIO DE SEMANA (DOMINGO)
+    // ============================
+    const inicioSem = new Date(hoy);
+    const day = hoy.getDay(); // 0 = domingo
+    const diff = hoy.getDate() - day; // domingo como inicio
+    inicioSem.setDate(diff);
+    inicioSem.setHours(0,0,0,0);
+
+    const metaSem = 35000;
+    const metaMes = metaSem * 4;
+
+    // Ventas del día
+    const ventasDia = sales
+        .filter(v => v.fecha === hoy.toISOString().slice(0,10))
+        .reduce((a,v)=>a+Number(v.total||0),0);
+
+    // Ventas de la semana (domingo → sábado)
+    const ventasSemana = sales
+        .filter(v => {
+            const f = new Date(v.fecha+"T00:00:00");
+            return f >= inicioSem && f <= hoy;
+        })
+        .reduce((a,v)=>a+Number(v.total||0),0);
+
+    // Ventas del mes
+    const ventasMes = sales
+        .filter(v => {
+            const f = new Date(v.fecha+"T00:00:00");
+            return f >= inicioMes && f <= hoy;
+        })
+        .reduce((a,v)=>a+Number(v.total||0),0);
+
+    const proyMes = (ventasMes / dia) * diasMes;
+
+    // === ALERTAS ===
+
+    // Día sin ventas
+    if (ventasDia === 0) {
+        agregarAlerta("No hay ventas registradas hoy.");
+    }
+
+    // Ventas del día bajas (menos del 50% del ritmo)
+    const ritmoDia = (ventasDia / (metaSem/7)) * 100;
+    if (ritmoDia < 50) {
+        agregarAlerta("Las ventas del día están por debajo del 50% del ritmo esperado.");
+    }
+
+    // Semana baja (ya corregida a domingo → sábado)
+    const avSem = (ventasSemana / metaSem) * 100;
+    if (avSem < 60) {
+        agregarAlerta("La semana va por debajo del 60% del objetivo.");
+    }
+
+    // Mes bajo
+    const avMes = (ventasMes / metaMes) * 100;
+    if (avMes < 60) {
+        agregarAlerta("El mes va por debajo del 60% del objetivo mensual.");
+    }
+
+    // Proyección mensual negativa
+    if (proyMes < metaMes) {
+        agregarAlerta("La proyección mensual indica que no se alcanzará la meta.");
+    }
+
+    // Meta semanal alcanzada
+    if (ventasSemana >= metaSem) {
+        agregarAlerta("¡Felicidades! Se alcanzó la meta semanal.");
+    }
+
+    // Meta mensual alcanzada
+    if (ventasMes >= metaMes) {
+        agregarAlerta("¡Excelente! Se alcanzó la meta mensual.");
+    }
+}
+
+function agregarAlerta(texto) {
+    const li = document.createElement("li");
+    li.textContent = texto;
+    $id("alertas-list").appendChild(li);
 }
 
     renderKPIs();	
-    renderAlertas();
+    generarAlertas();
 
     // --------- Init ----------
     try { renderStores(); } catch(e){ console.error('renderStores error', e); }
