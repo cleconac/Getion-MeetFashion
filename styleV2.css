@@ -34,13 +34,6 @@ align-items: center;
 margin-bottom: 20px;
 }
 
-.header h1 {
-margin: 0;
-font-size: 1.8rem;
-font-weight: 700;
-color: var(--primary);
-}
-
 .status-text {
 font-size: 0.9rem;
 color: var(--muted);
@@ -201,9 +194,6 @@ align-items: center;
 gap: 1rem;
 }
 
-.filter-bar select, .filter-bar input {
-min-width: 130px;
-}
 
 button.success.export {
 background-color: var(--success);
@@ -234,8 +224,8 @@ width: 100%;
 }
 
 #logo-img {
-  width: 80px;
-  height: 80px;
+  width: 100%;
+  height: 130px;
   object-fit: contain;
 }
 
@@ -737,4 +727,75 @@ button:not(:disabled):hover {
   opacity: 1;
   transform: translateY(-50%) scale(1.2);
 }
+
+
+.semaforo {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.semaforo.verde {
+    background-color: #28a745;
+}
+
+.semaforo.amarillo {
+    background-color: #ffc107;
+}
+
+.semaforo.rojo {
+    background-color: #dc3545;
+}
+
+.kpi-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.semaforo {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.semaforo.verde {
+    background-color: #28a745;
+}
+
+.semaforo.amarillo {
+    background-color: #ffc107;
+}
+
+.semaforo.rojo {
+    background-color: #dc3545;
+}
+
+
+.progress {
+    width: 100%;
+    height: 10px;
+    background: #e5e5e5;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #28a745;
+    transition: width 0.8s ease;
+}
+
+.progress-bar.amarillo {
+    background: #ffc107;
+}
+
+.progress-bar.rojo {
+    background: #dc3545;
+}
+
 
