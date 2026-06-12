@@ -962,18 +962,17 @@ function groupByView(raw) {
             if (!map[key]) map[key] = { periodLabel: r.fecha, fecha: r.fecha, tienda: r.tienda, turno:'Ambos', efectivo:0, tarjeta:0, total:0 };
             map[key].efectivo += Number(r.efectivo || 0);
             map[key].tarjeta += Number(r.tarjeta || 0);
-            map[key].total += Number(r.total || (Number(r.efectivo||0)+Number(r.tarjeta||0)));
+            map[key].total += Number((Number(r.efectivo||0)+Number(r.tarjeta - (r.tarjeta * 4.06 / 100)||0)));
           });
-          return Object.values(map).map(v => ({ ...v, efectivo:+v.efectivo.toFixed(2), tarjeta:+v.tarjeta.toFixed(2), total:+v.total.toFixed(2) })).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+          return Object.values(map).map(v => ({ ...v, efectivo:+v.efectivo.toFixed(2), tarjeta:+v.tarjeta - (v.tarjeta * 4.06 / 100).toFixed(2), total:+v.total.toFixed(2) })).sort((a,b)=>a.fecha.localeCompare(b.fecha));
         }
-        return raw.map(r => ({ ...r, efectivo:+Number(r.efectivo||0).toFixed(2), tarjeta:+Number(r.tarjeta||0).toFixed(2), total:+Number(r.total || (Number(r.efectivo||0)+Number(r.tarjeta||0))).toFixed(2) }));
+        return raw.map(r => ({ ...r, efectivo:+Number(r.efectivo||0).toFixed(2), tarjeta:+Number(r.tarjeta - (r.tarjeta * 4.06 / 100)||0).toFixed(2), total:+Number((Number(r.efectivo||0)+Number(r.tarjeta - (r.tarjeta * 4.06 / 100)||0))).toFixed(2) }));
       }
 
       const map = {};
 raw.forEach(r => {
     let key, label, keySort;
     const d = new Date(r.fecha + "T00:00:00");
-
     if (vista === "semana") {
         const day = d.getDay();
         const start = new Date(d); start.setDate(d.getDate() - day);
@@ -1011,8 +1010,8 @@ raw.forEach(r => {
     }
 
     map[mapKey].efectivo += Number(r.efectivo || 0);
-    map[mapKey].tarjeta += Number(r.tarjeta || 0);
-    map[mapKey].total += Number(r.total || (Number(r.efectivo||0)+Number(r.tarjeta||0)));
+    map[mapKey].tarjeta += Number(r.tarjeta - (r.tarjeta * 4.06 / 100) || 0);
+    map[mapKey].total += Number((Number(r.efectivo||0)+Number(r.tarjeta - (r.tarjeta * 4.06 / 100)||0)));
 });
 
       let out = Object.values(map).map(m => ({ ...m, efectivo:+m.efectivo.toFixed(2), tarjeta:+m.tarjeta.toFixed(2), total:+m.total.toFixed(2) }));
@@ -1476,97 +1475,6 @@ function  getEndOfWeek(date)  {
     return new  Date(start.getFullYear(),  start.getMonth(),  start.getDate() +  6);
 }
 
-
-//Funcion para renderizar modulo KPI Dashboard
-function renderKPIs()  {
-
-    const hoy = new Date();
-    const añoActual = hoy.getFullYear();
-    const mesActual = hoy.getMonth();
-    const diaActual = hoy.getDate();
-
-    const inicioMes = new Date(añoActual, mesActual, 1);
-    const finMes = new Date(añoActual, mesActual + 1, 0);
-    const diasMes = finMes.getDate();
-
-    // ============================
-    //  INICIO DE SEMANA (DOMINGO)
-    // ============================
-    const inicioSemana = new Date(hoy);
-    const day = hoy.getDay(); // 0 = domingo
-    const diff = hoy.getDate() - day; // domingo como inicio
-    inicioSemana.setDate(diff);
-    inicioSemana.setHours(0,0,0,0);
-
-    // Metas
-    const metaSemanal = 35000;
-    const metaMensual = metaSemanal * 4;
-
-    // Venta semanal
-    const ventasSemana = sales
-        .filter(v => {
-            const f = new Date(v.fecha + "T00:00:00");
-            return f >= inicioSemana && f <= hoy;
-        })
-        .reduce((acc, v) => acc + Number(v.total || v.efectivo + v.tarjeta), 0);
-
-    // Venta mensual
-    const ventasMes = sales
-        .filter(v => {
-            const f = new Date(v.fecha + "T00:00:00");
-            return f >= inicioMes && f <= hoy;
-        })
-        .reduce((acc, v) => acc + Number(v.total || v.efectivo + v.tarjeta), 0);
-
-    // Proyección mensual
-    const proyeccionMes = (ventasMes / diaActual) * diasMes;
-
-    // Proyección semanal
-    const diasTranscurridosSemana = Math.max(1, Math.ceil((hoy - inicioSemana) / (1000*60*60*24)));
-    const proyeccionSemanal = (ventasSemana / diasTranscurridosSemana) * 7;
-
-    // Avances
-    const avanceSemanal = (ventasSemana / metaSemanal) * 100;
-    const avanceMensual = (ventasMes / metaMensual) * 100;
-
-    // Semáforos
-    const colorSemanal = getSemaforoColor(avanceSemanal);
-    const colorMensual = getSemaforoColor(avanceMensual);
-
-    // Render valores
-    $id("kpi-meta-semanal").textContent = fmtMX(metaSemanal);
-    $id("kpi-ventas-semana").textContent = fmtMX(ventasSemana);
-    $id("kpi-proyeccion-semanal").textContent = fmtMX(proyeccionSemanal);
-
-    $id("kpi-meta-mensual").textContent = fmtMX(metaMensual);
-    $id("kpi-ventas-mes").textContent = fmtMX(ventasMes);
-    $id("kpi-proyeccion").textContent = fmtMX(proyeccionMes);
-    $id("kpi-avance").textContent = avanceMensual.toFixed(1) + "%";
-
-    // Semáforos
-    $id("kpi-semaforo-semanal").className = "semaforo " + colorSemanal;
-    $id("kpi-semaforo-mensual").className = "semaforo " + colorMensual;
-
-    // Barras de progreso
-    const barSem = $id("progress-semanal");
-    const barMes = $id("progress-mensual");
-
-    barSem.style.width = Math.min(avanceSemanal, 100) + "%";
-    barMes.style.width = Math.min(avanceMensual, 100) + "%";
-
-    barSem.className = "progress-bar " + colorSemanal;
-    barMes.className = "progress-bar " + colorMensual;
-}
-
-
-
-function getSemaforoColor(porcentaje) {
-    if (porcentaje >= 100) return "verde";
-    if (porcentaje >= 80) return "amarillo";
-    return "rojo";
-}
-
-
  function  parseFecha(fechaStr)  {
     const  [y, m,  d]  =  fechaStr.split("-");
     return  new Date(Number(y),  Number(m)  -  1, Number(d));
@@ -1696,107 +1604,6 @@ function inicioSemana(fecha) {
     return d;
 }
 
-
-//Funcion para modulo de alertas inteligentes
-function generarAlertas() {
-    const lista = $id("alertas-list");
-    lista.innerHTML = "";
-
-    if (!sales.length) return;
-
-    const hoy = new Date();
-    const año = hoy.getFullYear();
-    const mes = hoy.getMonth();
-    const dia = hoy.getDate();
-
-    const inicioMes = new Date(año, mes, 1);
-    const finMes = new Date(año, mes + 1, 0);
-    const diasMes = finMes.getDate();
-
-    // ============================
-    //  INICIO DE SEMANA (DOMINGO)
-    // ============================
-    const inicioSem = new Date(hoy);
-    const day = hoy.getDay(); // 0 = domingo
-    const diff = hoy.getDate() - day; // domingo como inicio
-    inicioSem.setDate(diff);
-    inicioSem.setHours(0,0,0,0);
-
-    const metaSem = 35000;
-    const metaMes = metaSem * 4;
-
-    // Ventas del día
-    const ventasDia = sales
-        .filter(v => v.fecha === hoy.toISOString().slice(0,10))
-        .reduce((a,v)=>a+Number(v.total||0),0);
-
-    // Ventas de la semana (domingo → sábado)
-    const ventasSemana = sales
-        .filter(v => {
-            const f = new Date(v.fecha+"T00:00:00");
-            return f >= inicioSem && f <= hoy;
-        })
-        .reduce((a,v)=>a+Number(v.total||0),0);
-
-    // Ventas del mes
-    const ventasMes = sales
-        .filter(v => {
-            const f = new Date(v.fecha+"T00:00:00");
-            return f >= inicioMes && f <= hoy;
-        })
-        .reduce((a,v)=>a+Number(v.total||0),0);
-
-    const proyMes = (ventasMes / dia) * diasMes;
-
-    // === ALERTAS ===
-
-    // Día sin ventas
-    if (ventasDia === 0) {
-        agregarAlerta("No hay ventas registradas hoy.");
-    }
-
-    // Ventas del día bajas (menos del 50% del ritmo)
-    const ritmoDia = (ventasDia / (metaSem/7)) * 100;
-    if (ritmoDia < 50) {
-        agregarAlerta("Las ventas del día están por debajo del 50% del ritmo esperado.");
-    }
-
-    // Semana baja (ya corregida a domingo → sábado)
-    const avSem = (ventasSemana / metaSem) * 100;
-    if (avSem < 60) {
-        agregarAlerta("La semana va por debajo del 60% del objetivo.");
-    }
-
-    // Mes bajo
-    const avMes = (ventasMes / metaMes) * 100;
-    if (avMes < 60) {
-        agregarAlerta("El mes va por debajo del 60% del objetivo mensual.");
-    }
-
-    // Proyección mensual negativa
-    if (proyMes < metaMes) {
-        agregarAlerta("La proyección mensual indica que no se alcanzará la meta.");
-    }
-
-    // Meta semanal alcanzada
-    if (ventasSemana >= metaSem) {
-        agregarAlerta("¡Felicidades! Se alcanzó la meta semanal.");
-    }
-
-    // Meta mensual alcanzada
-    if (ventasMes >= metaMes) {
-        agregarAlerta("¡Excelente! Se alcanzó la meta mensual.");
-    }
-}
-
-function agregarAlerta(texto) {
-    const li = document.createElement("li");
-    li.textContent = texto;
-    $id("alertas-list").appendChild(li);
-}
-
-    renderKPIs();	
-    generarAlertas();
 
     // --------- Init ----------
     try { renderStores(); } catch(e){ console.error('renderStores error', e); }
