@@ -29,7 +29,7 @@
 
   <!-- Input + botón (IDs que usa script.js) -->
   <div class="flex store-add">
-    <input id="input-store-name" type="text" placeholder="Nombre de tienda (ej. Sucursal Centro)" />
+    <input id="input-store-name" type="text" placeholder="Nombre de tienda (ej. Sucursal Centro)" style="width: 21%;" />
     <button id="btn-add-store" class="primary">Agregar tienda</button>
   </div>
 
@@ -177,7 +177,7 @@
 
         <div>
            <label>Nómina  fija  semanal:</label>
-            <input  type="number"  id="fin_nomina_fija"  value="6750"  min="0"  step="100">
+            <input  type="number"  id="fin_nomina_fija"  value="7600"  min="0"  step="100">
        </div>
 
         <div>
@@ -186,8 +186,7 @@
         </div>
 
        <div>
-            <label>Bono  por  cada  $1,000  arriba  de  $35,000:</label>
-           <input  type="number"  id="fin_bono_mil"  value="200"  min="0"  step="50">
+            <label>Objetivo mínimo semanal $35,000</label>
         </div>
 
        <button  id="fin_recalcular"  class="primary">Recalcular</button>
@@ -202,7 +201,7 @@
                    <th>%  Resurtido</th>
                    <th>Monto  resurtido</th>
                     <th>Gastos  fijos</th>
-                   <th>Gastos  variables</th>
+                   <th>Bono escalonado</th>
                    <th>Utilidad</th>
                 </tr>
             </thead>
