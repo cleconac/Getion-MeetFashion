@@ -152,6 +152,71 @@
 // ===  RESUMEN  FINANCIERO  ===
 //  ==========================
 
+// Exportar a CSV con valores numéricos
+function exportarResumenCSV(filas) {
+    if (!filas || filas.length === 0) return;
+
+    const headers = ["Semana", "Ventas", "% Resurtido", "Resurtido", "Gastos Fijos", "Bono Individual", "Utilidad"];
+    
+    const rows = filas.map(f => [
+        f.semana,
+        f.ventas.toFixed(2),          // numérico con 2 decimales
+        f.pctResurtido.toFixed(2),
+        f.resurtido.toFixed(2),
+        f.gastosFijos.toFixed(2),
+        f.gastosVariables.toFixed(2),
+        f.utilidad.toFixed(2)
+    ]);
+
+    const csvContent = [headers, ...rows]
+        .map(e => e.join(","))
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ResumenFinanciero.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Exportar a Excel con formato usando SheetJS
+function exportarResumenExcel(filas) {
+    // Necesitas incluir la librería XLSX en tu HTML:
+    // <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    const ws = XLSX.utils.json_to_sheet(filas);
+    
+    // Forzar tipo numérico en columnas de montos
+    Object.keys(ws).forEach(cell => {
+        if (["B","D","E","F","G"].includes(cell[0])) {
+            if (typeof ws[cell].v === "number") {
+                ws[cell].t = "n"; // tipo numérico
+            }
+        }
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Resumen");
+    XLSX.writeFile(wb, "ResumenFinanciero.xlsx");
+}
+
+
+function calcularBonoIndividual(ventas) {
+    if (ventas <= 35000) {
+        return 0;
+    } else if (ventas <= 45000) {
+        return (ventas - 35000) * (40 / 1000);
+    } else if (ventas <= 60000) {
+        return 400 + ((ventas - 45000) * (60 / 1000));
+    } else {
+        return 1300 + ((ventas - 60000) * (90 / 1000));
+    }
+}
+
 function  getISOWeek(fechaStr)  {
     const  fecha  =  new  Date(fechaStr);
    if  (isNaN(fecha))  return  null;
@@ -199,7 +264,7 @@ function  agruparVentasPorSemana(lista)  {
  
        const  excedente  =  Math.max(0, ventas  -  35000);
         const  bloques  =  Math.max(0,  Math.floor((ventas  -  35000)  /  1000));
-        const bono           =  bloques *  bonoMil;
+        const bono           =  calcularBonoIndividual(ventas)*2;
  
         const resurtido      = ventas  *  (pctResurtido  / 100);
         const  gastosFijos  = nominaFija  +  renta;
@@ -234,7 +299,7 @@ function  calcularResumenFinanciero(datos)  {
 
         const  excedente  =  Math.max(0,  ventas  -  35000);
         const  bloques     =  Math.floor(excedente  /  1000);
-        const  bono            =  bloques *  bonoMil;
+        const  bono            =  calcularBonoIndividual(ventas)*2;
 
         const  resurtido      =  ventas  *  (pctResurtido  /  100);
        const  gastosFijos  =  nominaFija  +  renta;
@@ -301,6 +366,23 @@ function  renderResumenFinanciero(filas)  {
         pag.style.display  =  'flex';
         info.textContent  = `Página  ${finPage}  de  ${totalPages}`;
     }
+
+// Botón para exportar CSV
+const exportCSVBtn = document.createElement("button");
+exportCSVBtn.textContent = "Exportar CSV";
+exportCSVBtn.className = "btn btn-secondary";
+exportCSVBtn.onclick = () => exportarResumenCSV(filas);
+card.appendChild(exportCSVBtn);
+
+// Botón para exportar Excel
+const exportExcelBtn = document.createElement("button");
+exportExcelBtn.textContent = "Exportar Excel";
+exportExcelBtn.className = "btn btn-success";
+exportExcelBtn.onclick = () => exportarResumenExcel(filas);
+card.appendChild(exportExcelBtn);
+
+
+
 }
 
 
